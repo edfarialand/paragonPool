@@ -5,6 +5,7 @@ description = "Transfer hook for Paragon Pool token"
 edition = "2021"
 
 [lib]
+path = "/workspaces/paragonPool/programs/transfer_hook/src/lib.rs"
 crate-type = ["cdylib", "lib"]
 name = "transfer_hook"
 
