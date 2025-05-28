@@ -1,0 +1,20 @@
+[features]
+seeds = false
+skip-lint = false
+
+[programs.devnet]
+transfer_hook = "HookLb6XLcGwzaVWxk9T8yWbmejbLX4xwWUxRp1zipNN"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "Devnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+
+[[test.genesis]]
+address = "HookLb6XLcGwzaVWxk9T8yWbmejbLX4xwWUxRp1zipNN"
+program = "target/deploy/transfer_hook.so"

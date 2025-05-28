@@ -1,0 +1,26 @@
+{
+  "name": "paragon-pool-token",
+  "version": "1.0.0",
+  "description": "Paragon Pool (PRPL) token with transfer hook",
+  "main": "index.js",
+  "scripts": {
+    "build": "anchor build",
+    "deploy": "anchor deploy",
+    "test": "anchor test",
+    "setup-token": "ts-node scripts/setup-token.ts",
+    "mint-tokens": "ts-node scripts/mint-tokens.ts",
+    "update-winner": "ts-node scripts/update-winner.ts"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.29.0",
+    "@solana/web3.js": "^1.87.6",
+    "@solana/spl-token": "^0.4.1",
+    "@solana/spl-token-metadata": "^0.1.3",
+    "bs58": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0"
+  }
+}
