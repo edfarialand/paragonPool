@@ -30,13 +30,13 @@ import { Program } from '@coral-xyz/anchor';
 // ========================================
 
 // 1. YOUR METADATA URI (upload PNG and metadata.json to Arweave first)  
-const METADATA_URI = "YOUR_ARWEAVE_METADATA_URI_HERE"; // Replace with your Arweave URI
+const METADATA_URI = "https://arweave.net/-Jzxp64F3K2-K2hOpW9VqU3Vk8jodJCN2l4wcyW-8UY"; // Replace with your Arweave URI
 
 // 2. YOUR WALLET (authority that can update winner)
-const AUTHORITY_WALLET = "YOUR_WALLET_ADDRESS_HERE"; // Replace with your wallet address
+const AUTHORITY_WALLET = "BgK6YKvDmriwY9p9hBQFmHDc3fnLsrMNxaxHfd1iF4DG"; // Replace with your wallet address
 
 // 3. INITIAL WINNER WALLET (can be updated later via update-winner script)
-const INITIAL_WINNER_WALLET = "WINNER_WALLET_ADDRESS_HERE"; // Replace with initial winner address
+const INITIAL_WINNER_WALLET = "BgK6YKvDmriwY9p9hBQFmHDc3fnLsrMNxaxHfd1iF4DG"; // Replace with initial winner address
 
 // ========================================
 // CONNECTION SETUP
