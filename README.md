@@ -124,7 +124,7 @@ paragon-pool-token/
 │   ├── src/
 │   │   ├── lib.rs                   # Main program entry
 │   │   ├── instructions/            # Program instructions
-│   │   └── state/                   # Account state definitions
+│   │   └── state/      # Account state definitions
 │   └── Cargo.toml                   # Rust dependencies
 ├── scripts/                         # TypeScript deployment scripts
 │   ├── setup-token.ts              # Initial token setup
