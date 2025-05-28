@@ -55,7 +55,7 @@ const TOKEN_METADATA = {
   uri: METADATA_URI,
   additionalMetadata: [
     ["description", "Weekly pool token where 1% of transfers go to the winner"],
-    ["website", "https://your-website.com"], // Replace with your website
+    ["website", "https://paragoncrypto.biz], // Replace with your website
   ],
 };
 
