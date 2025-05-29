@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
-use std::collections::BTreeMap;
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use std::collections::{BTreeMap, BTreeSet};
+use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface, TransferChecked};
 use spl_transfer_hook_interface::instruction::{ExecuteInstruction, TransferHookInstruction};
 use spl_tlv_account_resolution::{account::ExtraAccountMeta, seeds::Seed, state::ExtraAccountMetaList};
 use crate::state::HookConfig;
@@ -40,11 +40,12 @@ pub struct TransferHook<'info> {
 }
 
 impl<'info> TransferHook<'info> {
-    pub fn transfer_ctx(&self) -> CpiContext<'_, '_, '_, 'info, anchor_spl::token_interface::Transfer<'info>> {
-        let cpi_accounts = anchor_spl::token_interface::Transfer {
+    pub fn transfer_ctx(&self) -> CpiContext<'_, '_, '_, 'info, TransferChecked<'info>> {
+        let cpi_accounts = TransferChecked {
             from: self.source_token.to_account_info(),
             to: self.winner_token_account.to_account_info(),
             authority: self.owner.to_account_info(),
+            mint: self.mint.to_account_info(),
         };
         CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
     }
@@ -53,32 +54,51 @@ impl<'info> TransferHook<'info> {
 pub fn transfer_hook(ctx: Context<TransferHook>, amount: u64) -> Result<()> {
     // Calculate 1% fee
     let fee_amount = amount.checked_div(100).unwrap_or(0);
-    
-    // Only transfer if fee is greater than 0 to avoid zero-amount transfers
+
     if fee_amount > 0 {
-        // Transfer 1% to winner wallet
-        anchor_spl::token_interface::transfer(ctx.accounts.transfer_ctx(), fee_amount)?;
+        // Use transfer_checked for SPL Token 2022
+        anchor_spl::token_interface::transfer_checked(
+            ctx.accounts.transfer_ctx(),
+            fee_amount,
+            ctx.accounts.mint.decimals,
+        )?;
         msg!("Transfer hook executed: {} tokens sent to winner wallet", fee_amount);
     }
-    
+
     Ok(())
 }
 
-// fallback function
-// invoke this instruction so that other programs can invoke the transfer hook
+// fallback function - for other programs to invoke the transfer hook
 pub fn fallback<'info>(
     program_id: &Pubkey,
     accounts: &'info [AccountInfo<'info>],
     data: &[u8],
 ) -> Result<()> {
+    use anchor_lang::prelude::borsh::BorshDeserialize;
+    use anchor_lang::prelude::ProgramError;
+    use anchor_lang::AccountsClose;
+    use anchor_lang::prelude::ToAccountInfos;
+
+    // Anchor's `try_accounts` needs these
+    use anchor_lang::prelude::Pubkey;
+    use crate::instructions::transfer_hook::TransferHookBumps;
+
     let instruction = TransferHookInstruction::unpack(data)?;
 
-    // match instruction discriminator to execute the correct instruction
     match instruction {
         TransferHookInstruction::Execute { amount } => {
-            let account_infos = accounts;
-            let accounts = TransferHook::try_accounts(program_id, &mut &account_infos[..], data)?;
-            let ctx = Context::new(program_id, &mut accounts, &[], BTreeMap::new());
+            let mut bumps = TransferHookBumps::default();
+            let mut seeds = BTreeSet::new();
+            let mut data_slice = data;
+            let mut account_infos = accounts;
+            let accounts = TransferHook::try_accounts(
+                program_id,
+                &mut account_infos,
+                &mut data_slice,
+                &mut bumps,
+                &mut seeds,
+            )?;
+            let ctx = Context::new(program_id, &mut *Box::new(accounts), &[], BTreeMap::new());
             return transfer_hook(ctx, amount);
         }
     }
@@ -108,7 +128,6 @@ pub struct InitializeExtraAccountMetaList<'info> {
 pub fn initialize_extra_account_meta_list(
     ctx: Context<InitializeExtraAccountMetaList>,
 ) -> Result<()> {
-    // The `addExtraAccountsToInstruction` JS helper function resolving incorrectly
     let account_metas = vec![
         ExtraAccountMeta::new_with_seeds(
             &[Seed::Literal {
@@ -129,9 +148,7 @@ pub fn initialize_extra_account_meta_list(
         )?,
     ];
 
-    // calculate account size
     let account_size = ExtraAccountMetaList::size_of(account_metas.len())? as u64;
-    // calculate minimum required lamports
     let lamports = Rent::get()?.minimum_balance(account_size as usize);
 
     let mint = ctx.accounts.mint.key();
@@ -141,7 +158,6 @@ pub fn initialize_extra_account_meta_list(
         &[ctx.bumps.extra_account_meta_list],
     ]];
 
-    // create ExtraAccountMetaList account
     anchor_lang::system_program::create_account(
         CpiContext::new(
             ctx.accounts.system_program.to_account_info(),
@@ -156,7 +172,6 @@ pub fn initialize_extra_account_meta_list(
         ctx.program_id,
     )?;
 
-    // initialize ExtraAccountMetaList account with extra accounts
     ExtraAccountMetaList::init::<ExecuteInstruction>(
         &mut ctx.accounts.extra_account_meta_list.try_borrow_mut_data()?,
         &account_metas,
